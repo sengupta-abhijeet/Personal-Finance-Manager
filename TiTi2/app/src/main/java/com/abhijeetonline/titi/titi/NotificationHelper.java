@@ -8,6 +8,7 @@ import android.content.Intent;
 import android.graphics.BitmapFactory;
 import android.media.RingtoneManager;
 import android.net.Uri;
+import android.support.v7.app.NotificationCompat;
 
 /**
  * Created by asengu02 on 12/3/2015.
@@ -25,12 +26,15 @@ public class NotificationHelper {
         PendingIntent pendingIntent = PendingIntent.getActivity(mContext.getApplicationContext(),
                 id, intent, PendingIntent.FLAG_UPDATE_CURRENT);
 
-        Notification.Builder builder = new Notification.Builder(mContext.getApplicationContext())
+        android.support.v4.app.NotificationCompat.Builder builder = new NotificationCompat.Builder(mContext.getApplicationContext())
                 .setContentTitle(title)
                 .setContentText(content)
                 .setContentIntent(pendingIntent)
                 .setSmallIcon(R.drawable.ic_launcher)
                 .setLargeIcon(BitmapFactory.decodeResource(mContext.getResources(), R.drawable.ic_launcher))
+                .setStyle(new NotificationCompat.BigTextStyle().bigText(content))
+                //.addAction (R.drawable.ic_,getString(R.string.dismiss), piDismiss)
+               // .addAction (R.drawable.ic_stat_snooze,getString(R.string.snooze), piSnooze)
                 ;
         Notification n;
 
