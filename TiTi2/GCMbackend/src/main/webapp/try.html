@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>TiTi Cloud Messaging!</title>
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+    <script src="//netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
+</head>
+<body role="document" style="padding-top: 70px;">
+
+<div id="outputAlert"></div>
+
+<script type="text/javascript">
+
+    function getUrlVars() {
+        var vars = {};
+        var parts = window.location.href.replace(/[?&]+([^=&]+)=([^&]*)/gi,
+            function(m,key,value) {
+            vars[key] = value;
+    });
+    return vars;
+  }
+
+    // A function that attaches a "Send Message" button click handler
+    function sendMessage() {
+    var myMessageParam = decodeURIComponent(getUrlVars()["pushMsg"]);
+     gapi.client.messaging.messagingEndpoint.sendMessage({'message': myMessageParam}).execute(
+     function(response) {
+            var outputAlertDiv = document.getElementById('outputAlert');
+
+            if (response && response.error) {
+              outputAlertDiv.innerHTML = '<b>Error Code:</b> ' + response.error.code + ' [' + response.error.message +']';
+            }
+            else {
+              outputAlertDiv.innerHTML = '<b>Success:</b> Message \"' + message + '\" sent to all registered devices!</h2>';
+            }
+          }
+     );
+    }
+
+    // This is called initially
+    function init() {
+      var apiName = 'messaging'
+      var apiVersion = 'v1'
+      var apiRoot = 'https://' + window.location.host + '/_ah/api';
+      var callback = function() {
+        sendMessage();
+      }
+      gapi.client.load(apiName, apiVersion, callback, apiRoot);
+
+    }
+  
+</script>
+<!--
+ Load the Google APIs Client Library for JavaScript
+ More info here : https://developers.google.com/api-client-library/javascript/reference/referencedocs
+-->
+<script src="https://apis.google.com/js/client.js?onload=init"></script>
+</body>
+</html>
