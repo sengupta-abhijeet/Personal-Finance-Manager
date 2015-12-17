@@ -36,7 +36,7 @@ public class GcmIntentService extends IntentService {
 
                // showToast(extras.getString("message"));
                 NotificationHelper notificationHelper = new NotificationHelper(getApplicationContext());
-                notificationHelper.createNotification("TiTi", extras.getString("message"), 2325,new Intent(getApplicationContext(),MainActivity.class),true,false);
+                notificationHelper.createNotification("TiTi", extras.getString("message"), 2325,new Intent(getApplicationContext(),MainActivity2.class),true,false,"s2");
             }
         }
         GcmBroadcastReceiver.completeWakefulIntent(intent);

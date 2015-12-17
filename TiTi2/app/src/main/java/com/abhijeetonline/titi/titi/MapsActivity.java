@@ -1,7 +1,15 @@
 package com.abhijeetonline.titi.titi;
 
+import android.location.Location;
+import android.media.AudioManager;
+import android.media.ToneGenerator;
+import android.os.Handler;
+import android.os.PowerManager;
+import android.provider.SyncStateContract;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
+import android.view.View;
+import android.widget.Toast;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -9,14 +17,39 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 
-public class MapsActivity extends FragmentActivity {
+public class MapsActivity extends FragmentActivity{
 
     private GoogleMap mMap; // Might be null if Google Play services APK is not available.
+    protected PowerManager.WakeLock mWakeLock;
+    Handler mHandler;
+    Runnable refresh;
+
+    private final Runnable m_Runnable = new Runnable()
+    {
+        public void run()
+
+        {
+            Toast.makeText(MapsActivity.this,"Refreshing",Toast.LENGTH_SHORT).show();
+            MapsActivity.this.mHandler.postDelayed(m_Runnable,20000);
+            //ToneGenerator toneGen1 = new ToneGenerator(AudioManager.STREAM_MUSIC, 100);
+            //toneGen1.startTone(ToneGenerator.TONE_CDMA_PIP,150);
+        }
+
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
+
+        this.mHandler = new Handler();
+        m_Runnable.run();
+
+        //make the screen awake
+        final PowerManager pm = (PowerManager) getSystemService(getApplicationContext().POWER_SERVICE);
+        this.mWakeLock = pm.newWakeLock(PowerManager.SCREEN_DIM_WAKE_LOCK, "My Tag");
+        this.mWakeLock.acquire();
+
         setUpMapIfNeeded();
         // Add a marker in Sydney, Australia, and move the camera.
         LatLng home   = new LatLng(12.946698, 77.717486);
@@ -28,6 +61,7 @@ public class MapsActivity extends FragmentActivity {
         mMap.setMyLocationEnabled(true);
         mMap.setTrafficEnabled(true);
         mMap.getUiSettings().setCompassEnabled(true);
+        mMap.getUiSettings().setMapToolbarEnabled(true);
 
     }
 
@@ -35,6 +69,13 @@ public class MapsActivity extends FragmentActivity {
     protected void onResume() {
         super.onResume();
         setUpMapIfNeeded();
+    }
+
+    @Override
+    public void onDestroy() {
+        this.mWakeLock.release();
+        mHandler.removeCallbacks(m_Runnable);
+        super.onDestroy();
     }
 
     /**
@@ -74,4 +115,5 @@ public class MapsActivity extends FragmentActivity {
     private void setUpMap() {
         mMap.addMarker(new MarkerOptions().position(new LatLng(0, 0)).title("Marker"));
     }
+
 }

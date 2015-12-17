@@ -1,315 +1,217 @@
-//(c) AbhijeetOnline
-
 package com.abhijeetonline.titi.titi;
 
-import android.bluetooth.BluetoothAdapter;
-import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothSocket;
-import android.content.ActivityNotFoundException;
+import com.abhijeetonline.titi.titi.util.SystemUiHider;
+
+import android.annotation.TargetApi;
+import android.app.Activity;
+import android.app.NotificationManager;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.graphics.Color;
-import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.Message;
-import android.app.Activity;
-import android.content.Intent;
-import android.os.ParcelUuid;
-import android.speech.RecognitionListener;
-import android.speech.RecognizerIntent;
-import android.speech.SpeechRecognizer;
-import android.speech.tts.TextToSpeech;
-import android.telephony.TelephonyManager;
-import android.util.Log;
+import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
-import android.widget.LinearLayout;
-import android.widget.Toast;
-
-import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Locale;
-import java.util.Set;
-import java.util.UUID;
+import android.widget.ProgressBar;
+import android.widget.TextView;
 
 
-public class MainActivity extends Activity implements View.OnClickListener{
-    public static Handler mUiHandler = null;
+/**
+ * An example full-screen activity that shows and hides the system UI (i.e.
+ * status bar and navigation/system bar) with user interaction.
+ *
+ * @see SystemUiHider
+ */
+public class MainActivity extends Activity {
+    /**
+     * Whether or not the system UI should be auto-hidden after
+     * {@link #AUTO_HIDE_DELAY_MILLIS} milliseconds.
+     */
+    private static final boolean AUTO_HIDE = true;
 
-    TextToSpeech mT1;
+    /**
+     * If {@link #AUTO_HIDE} is set, the number of milliseconds to wait after
+     * user interaction before hiding the system UI.
+     */
+    private static final int AUTO_HIDE_DELAY_MILLIS = 3000;
+
+    /**
+     * If set, will toggle the system UI visibility upon interaction. Otherwise,
+     * will show the system UI visibility upon interaction.
+     */
+    private static final boolean TOGGLE_ON_CLICK = true;
+
+    /**
+     * The flags to pass to {@link SystemUiHider#getInstance}.
+     */
+    private static final int HIDER_FLAGS = SystemUiHider.FLAG_HIDE_NAVIGATION;
+
+    /**
+     * The instance of the {@link SystemUiHider} for this activity.
+     */
+    private SystemUiHider mSystemUiHider;
+
+    private BroadcastReceiver mReceiver;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         setContentView(R.layout.activity_main);
+        UpdateActionBarOnLocationChange();
 
-        mT1=new TextToSpeech(getApplicationContext(), new TextToSpeech.OnInitListener() {
+        Button buttonLaunchApplications = (Button)findViewById(R.id.button_launcherGoToAppScreen);
+        buttonLaunchApplications.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onInit(int status) {
-                if(status != TextToSpeech.ERROR) {
-                    mT1.setLanguage(Locale.US);
+            public void onClick(View view) {
+                Intent intent = new Intent(getApplicationContext(),MainActivity2.class);
+                startActivity(intent);
+            }
+        });
+
+
+        final View controlsView = findViewById(R.id.fullscreen_content_controls);
+        final View contentView = findViewById(R.id.fullscreen_content);
+
+        // Set up an instance of SystemUiHider to control the system UI for
+        // this activity.
+        mSystemUiHider = SystemUiHider.getInstance(this, contentView, HIDER_FLAGS);
+        mSystemUiHider.setup();
+        mSystemUiHider
+                .setOnVisibilityChangeListener(new SystemUiHider.OnVisibilityChangeListener() {
+                    // Cached values.
+                    int mControlsHeight;
+                    int mShortAnimTime;
+
+                    @Override
+                    @TargetApi(Build.VERSION_CODES.HONEYCOMB_MR2)
+                    public void onVisibilityChange(boolean visible) {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB_MR2) {
+                            // If the ViewPropertyAnimator API is available
+                            // (Honeycomb MR2 and later), use it to animate the
+                            // in-layout UI controls at the bottom of the
+                            // screen.
+                            if (mControlsHeight == 0) {
+                                mControlsHeight = controlsView.getHeight();
+                            }
+                            if (mShortAnimTime == 0) {
+                                mShortAnimTime = getResources().getInteger(
+                                        android.R.integer.config_shortAnimTime);
+                            }
+                            controlsView.animate()
+                                    .translationY(visible ? 0 : mControlsHeight)
+                                    .setDuration(mShortAnimTime);
+                        } else {
+                            // If the ViewPropertyAnimator APIs aren't
+                            // available, simply show or hide the in-layout UI
+                            // controls.
+                            controlsView.setVisibility(visible ? View.VISIBLE : View.GONE);
+                        }
+
+                        if (visible && AUTO_HIDE) {
+                            // Schedule a hide().
+                            delayedHide(AUTO_HIDE_DELAY_MILLIS);
+                        }
+                    }
+                });
+
+        // Set up the user interaction to manually show or hide the system UI.
+        contentView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if (TOGGLE_ON_CLICK) {
+                    mSystemUiHider.toggle();
+                } else {
+                    mSystemUiHider.show();
                 }
             }
         });
 
-        LinearLayout layout = (LinearLayout) findViewById(R.id.verticalLayout_MainLayoutButtonHolder);
+        // Upon interacting with UI controls, delay any scheduled hide()
+        // operations to prevent the jarring behavior of controls going away
+        // while interacting with the UI.
+        findViewById(R.id.button_launcherGoToAppScreen).setOnTouchListener(mDelayHideTouchListener);
+    }
 
-        Button speakButton = new Button(this);
-        speakButton.setText("Speak");
-        speakButton.setBackgroundColor(Color.GREEN);
-        speakButton.setHeight(200);
-        speakButton.setId(10);
-        speakButton.setOnClickListener(this);
-        layout.addView(speakButton);
+    @Override
+    protected void onPostCreate(Bundle savedInstanceState) {
+        super.onPostCreate(savedInstanceState);
 
-        Button CarBTConnectButton = new Button(this);
-        CarBTConnectButton.setText("CarBT Connect");
-        CarBTConnectButton.setBackgroundColor(Color.CYAN);
-        CarBTConnectButton.setHeight(50);
-        CarBTConnectButton.setId(20);
-        CarBTConnectButton.setOnClickListener(this);
-        layout.addView(CarBTConnectButton);
+        // Trigger the initial hide() shortly after the activity has been
+        // created, to briefly hint to the user that UI controls
+        // are available.
+        delayedHide(100);
+    }
 
-        mUiHandler = new Handler() // Receive messages from service class
-        {
-            public void handleMessage(Message msg)
-            {
-                switch(msg.what)
-                {
-                    case 0:
-                        // add the status which came from service and show on GUI
-                        Toast.makeText(MainActivity.this, msg.obj.toString(), Toast.LENGTH_LONG).show();
-                        break;
-
-                    default:
-                        break;
+    @Override
+    protected void onResume() {
+        super.onResume();
+        IntentFilter intentFilterBackgroundServiceValuesUpdated = new IntentFilter("Background Service Values Updated");
+        //IntentFilter intentFilterGSMSingleStrengthValuesUpdated = new IntentFilter("GSM Signal Strength Values Updated");
+        mReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                //Broadcast notification will come for interval task
+                if (intent.getAction().equals("Background Service Values Updated")){
+                    UpdateActionBarOnLocationChange();
                 }
+                //if (intent.getAction().equals("GSM Signal Strength Values Updated")){
+                   // int signalStrength = intent.getIntExtra("SignalStrength",0);
+                    //NotifyOnSignalStrength(signalStrength);
+                //}
             }
         };
-    }
-
-    //start the service
-    public void onClickStartServie(View V)
-    {
-        //start the service from here //MyService is your service class name
-        startService(new Intent(this, MainBackgroundService.class));
-    }
-    //Stop the started service
-    public void onClickStopService(View V)
-    {
-        //Stop the running service from here//MyService is your service class name
-        //Service will only stop if it is already running.
-        stopService(new Intent(this, MainBackgroundService.class));
-    }
-    //send message to service
-    public void onClickGeoMap(View v){
-        Intent intent = new Intent(this, MapsActivity.class);
-        startActivity(intent);
-    }
-    public void onClickSendMessage (View v)
-    {
-        //only we need a handler to send message to any component.
-        //here we will get the handler from the service first, then
-        //we will send a message to the service.
-        new GcmRegistrationAsyncTask(this).execute();
-
-        if(null != MainBackgroundService.mMyServiceHandler)
-        {
-            //first build the message and send.
-            //put a integer value here and get it from the service handler
-            //For Example: lets use 0 (msg.what = 0;) for getting service running status from the service
-            Message msg = new Message();
-            msg.what = 0;
-            msg.obj  = "Add your Extra Meaage Here"; // you can put extra message here
-            MainBackgroundService.mMyServiceHandler.sendMessage(msg);
-        }
+        //registering our receiver
+        this.registerReceiver(mReceiver, intentFilterBackgroundServiceValuesUpdated);
+       // this.registerReceiver(mReceiver, intentFilterGSMSingleStrengthValuesUpdated);
     }
 
     @Override
-    public void onClick(View v) {
-
-        switch (v.getId()) {
-
-            case 10:{
-
-                Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
-                intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,
-                        RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
-                intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault());
-                intent.putExtra(RecognizerIntent.EXTRA_PROMPT,"Speak, TiTi Is Listening");
-
-                try {
-                    startActivityForResult(intent, 100);
-                } catch (ActivityNotFoundException a) {
-                    Toast.makeText(getApplicationContext(),"Speech Not Supported",
-                            Toast.LENGTH_SHORT).show();
-                }
-            }
-            break;
-            case 20: {
-                BluetoothAdapter btAdapter;
-                btAdapter = BluetoothAdapter.getDefaultAdapter();
-                if (!btAdapter.isEnabled())
-                        btAdapter.enable();
-                //BluetoothDevice device = btAdapter.getRemoteDevice("50:32:75:C9:08:1E");
-                BluetoothDevice device = btAdapter.getRemoteDevice("24:A8:7D:02:CA:3D");
-                BluetoothSocket tmp = null;
-
-                BluetoothSocket mmSocket2 = null;
-                BluetoothSocket mmSocket3 = null;
-                BluetoothSocket mmSocket4 = null;
-
-
-                try {
-                    UUID uid = UUID.fromString("0000111f-0000-1000-8000-00805f9b34fb");
-                    tmp = device.createRfcommSocketToServiceRecord(uid);
-                } catch (IOException e) { }
-                mmSocket2 = tmp;
-                btAdapter.cancelDiscovery();
-                try {
-                    // Connect the device through the socket. This will block
-                    // until it succeeds or throws an exception
-                    mmSocket2.connect();
-                } catch (IOException connectException) {
-                    // Unable to connect; close the socket and get out
-                    try {
-                        mmSocket2.close();
-                    } catch (IOException closeException) { }
-                    //return;
-                }
-
-                try {
-                    UUID uid = UUID.fromString("0000110a-0000-1000-8000-00805f9b34fb");
-                    tmp = device.createRfcommSocketToServiceRecord(uid);
-                } catch (IOException e) { }
-                mmSocket3 = tmp;
-                btAdapter.cancelDiscovery();
-                try {
-                    // Connect the device through the socket. This will block
-                    // until it succeeds or throws an exception
-                    mmSocket3.connect();
-                } catch (IOException connectException) {
-                    // Unable to connect; close the socket and get out
-                    try {
-                        mmSocket3.close();
-                    } catch (IOException closeException) { }
-                    //return;
-                }
-
-                try {
-                    UUID uid = UUID.fromString("0000110b-0000-1000-8000-00805f9b34fb");
-                    tmp = device.createRfcommSocketToServiceRecord(uid);
-                } catch (IOException e) { }
-                mmSocket4 = tmp;
-                btAdapter.cancelDiscovery();
-                try {
-                    // Connect the device through the socket. This will block
-                    // until it succeeds or throws an exception
-                    mmSocket4.connect();
-                } catch (IOException connectException) {
-                    // Unable to connect; close the socket and get out
-                    try {
-                        mmSocket4.close();
-                    } catch (IOException closeException) { }
-                    //return;
-                }
-
-
-            }
-            break;
-            default:
-                break;
-        }
+    protected void onPause() {
+        super.onPause();
+        //unregister our receiver
+        this.unregisterReceiver(this.mReceiver);
     }
 
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
 
-        switch (requestCode) {
-            case 100: {
-                if (resultCode == RESULT_OK && null != data) {
-
-                    ArrayList<String> result = data
-                            .getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
-                    Toast.makeText(getApplicationContext(),result.get(0),
-                            Toast.LENGTH_SHORT).show();
-                    String text = result.get(0);
-                    executeMatchingVoiceCommand(text);
-                }
-                break;
+    /**
+     * Touch listener to use for in-layout UI controls to delay hiding the
+     * system UI. This is to prevent the jarring behavior of controls going away
+     * while interacting with activity UI.
+     */
+    View.OnTouchListener mDelayHideTouchListener = new View.OnTouchListener() {
+        @Override
+        public boolean onTouch(View view, MotionEvent motionEvent) {
+            if (AUTO_HIDE) {
+                delayedHide(AUTO_HIDE_DELAY_MILLIS);
             }
-
+            return false;
         }
+    };
+
+    Handler mHideHandler = new Handler();
+    Runnable mHideRunnable = new Runnable() {
+        @Override
+        public void run() {
+            mSystemUiHider.hide();
+        }
+    };
+
+    /**
+     * Schedules a call to hide() in [delay] milliseconds, canceling any
+     * previously scheduled calls.
+     */
+    private void delayedHide(int delayMillis) {
+        mHideHandler.removeCallbacks(mHideRunnable);
+        mHideHandler.postDelayed(mHideRunnable, delayMillis);
     }
-
-    void executeMatchingVoiceCommand(String command){
-        if(command.compareTo("switch on Bluetooth")==0 ||
-           command.compareTo("start Bluetooth")==0)
-        {
-            BluetoothAdapter mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-            if (!mBluetoothAdapter.isEnabled()){
-                mBluetoothAdapter.enable();
-                mT1.speak("Ok Switching On Bluetooth", TextToSpeech.QUEUE_FLUSH, null);
-            }else{
-                mT1.speak("Bluetooth is already enabled", TextToSpeech.QUEUE_FLUSH, null);
-            }
-
-        }
-
-        if(command.compareTo("switch off Bluetooth")==0 ||
-                command.compareTo("stop Bluetooth")==0)
-        {
-            BluetoothAdapter mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-            if (mBluetoothAdapter.isEnabled()){
-                mBluetoothAdapter.disable();
-                mT1.speak("Ok Switching Off Bluetooth", TextToSpeech.QUEUE_FLUSH, null);
-            }else{
-                mT1.speak("Bluetooth is not enabled", TextToSpeech.QUEUE_FLUSH, null);
-            }
-
-        }
-
-        if(command.compareTo("start Bluetooth Discovery")==0)
-        {
-            BluetoothAdapter mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-            if (mBluetoothAdapter.isEnabled()){
-                mBluetoothAdapter.startDiscovery();
-                mT1.speak("Ok starting discovery", TextToSpeech.QUEUE_FLUSH, null);
-            }else{
-                mT1.speak("Bluetooth is not enabled", TextToSpeech.QUEUE_FLUSH, null);
-            }
-        }
-
-        if(command.toLowerCase().compareTo("call tutu")==0)
-        {
-            Intent in=new Intent(Intent.ACTION_CALL, Uri.parse("tel:9731818245"));
-            mT1.speak("calling tutu", TextToSpeech.QUEUE_FLUSH, null);
-            try{
-                startActivity(in);
-                try {
-                    Thread.sleep(5000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-                Intent intentHome = new Intent(getApplicationContext(), MainActivity.class);
-                intentHome.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                intentHome.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                startActivity(intentHome);
-            }catch (android.content.ActivityNotFoundException ex){
-                ;
-            }
-
-
-        }
-
-        if(command.toLowerCase().compareTo("traffic")==0) {
-            mT1.speak("showing traffic condition", TextToSpeech.QUEUE_FLUSH, null);
-            Intent intent = new Intent(this, MapsActivity.class);
-            startActivity(intent);
-        }
-
+    private void UpdateActionBarOnLocationChange(){
+        if(GlobalValuesNStatus.getInstance().currentCellLocation !=null )
+         getActionBar().setTitle("TiTi@"+GlobalValuesNStatus.getInstance().currentCellLocation);
+         getActionBar().setSubtitle("Hello Tweet Tweet!");
     }
 }

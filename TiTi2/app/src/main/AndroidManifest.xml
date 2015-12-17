@@ -13,10 +13,11 @@
     <uses-permission android:name="android.permission.GET_ACCOUNTS" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="com.google.android.c2dm.permission.RECEIVE" />
-    <uses-permission android:name="android.permission.BLUETOOTH"/>
-    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN"/>
+    <uses-permission android:name="android.permission.BLUETOOTH" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
     <uses-permission android:name="android.permission.CALL_PHONE" />
-
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="com.android.alarm.permission.SET_ALARM" />
 
     <permission
         android:name="com.example.gcm.permission.C2D_MESSAGE"
@@ -30,17 +31,15 @@
         android:label="@string/app_name"
         android:theme="@style/AppTheme" >
         <activity
-            android:name=".MainActivity"
+            android:name=".MainActivity2"
             android:label="@string/app_name" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
-                <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
 
         <service
-            android:name=".MainBackgroundService"
+            android:name=".CellLocationChangeBackgroundService"
             android:enabled="true"
             android:exported="true" >
         </service>
@@ -48,6 +47,23 @@
         <activity
             android:name=".LearnLocations"
             android:label="@string/title_activity_learn_locations" >
+        </activity>
+        <activity
+            android:name="com.dropbox.client2.android.AuthActivity"
+            android:configChanges="orientation|keyboard"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait"
+            android:theme="@android:style/Theme.Light.NoTitleBar" >
+            <intent-filter>
+
+                <!-- Change this to be db- followed by your app key -->
+                <data android:scheme="db-jwuctvd09muhitn" />
+
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.BROWSABLE" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
         </activity>
 
         <meta-data
@@ -67,10 +83,71 @@
             android:permission="com.google.android.c2dm.permission.SEND" >
             <intent-filter>
                 <action android:name="com.google.android.c2dm.intent.RECEIVE" />
+
                 <category android:name="com.abhijeetonline.titi.titi" />
             </intent-filter>
         </receiver>
+        <receiver
+            android:name=".BroadcastReceiverOnBoot"
+            android:enabled="true"
+            android:exported="false" >
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
+
         <service android:name=".GcmIntentService" />
+
+        <activity
+            android:name=".XpenserCategories"
+            android:label="@string/title_activity_xpenser_categories" >
+        </activity>
+        <activity
+            android:name=".XpenserSubCategories"
+            android:label="@string/title_activity_xpenser_sub_categories" >
+        </activity>
+        <activity
+            android:name=".XpenserVoucherAmountEntry"
+            android:label="@string/title_activity_xpenser_voucher_amount_entry" >
+        </activity>
+        <activity
+            android:name=".XpenserSelectSourceAccount"
+            android:label="@string/title_activity_xpenser_select_source_account" >
+        </activity>
+        <activity
+            android:name=".XpenserVoucherSubmitConfirmation"
+            android:label="@string/title_activity_xpenser_voucher_submit_confirmation" >
+        </activity>
+        <activity
+            android:name=".XpenserMain"
+            android:label="@string/title_activity_xpenser_main" >
+        </activity>
+        <activity
+            android:name=".XpenserUploadToCloud"
+            android:label="@string/title_activity_xpenser_upload_to_cloud" >
+        </activity>
+        <activity
+            android:name=".MainActivity"
+            android:configChanges="orientation|keyboardHidden|screenSize"
+            android:label="@string/app_name"
+            android:theme="@style/FullscreenTheme" >
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <service
+            android:name=".MainBackgroundRepeatedService"
+            android:enabled="true"
+            android:exported="true" >
+        </service>
+
+        <activity
+            android:name=".NetworkSignalStrengthSettings"
+            android:label="@string/title_activity_network_signal_strength_settings" >
+        </activity>
 
     </application>
 

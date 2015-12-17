@@ -22,7 +22,7 @@ public class NotificationHelper {
         mContext = context;
     }
 
-    public void createNotification(String title,String content, int id,Intent intent,boolean makeSound,boolean sticky){
+    public void createNotification(String title,String content, int id,Intent intent,boolean makeSound,boolean sticky,String soundName){
         PendingIntent pendingIntent = PendingIntent.getActivity(mContext.getApplicationContext(),
                 id, intent, PendingIntent.FLAG_UPDATE_CURRENT);
 
@@ -40,9 +40,14 @@ public class NotificationHelper {
 
         n = builder.build();
 
+        int musicResource= R.raw.s2;
+
+        if(soundName.compareTo("serious")==0)
+            musicResource = R.raw.serious;
+
         if(makeSound) {
             n.sound = Uri.parse("android.resource://"
-                    + mContext.getApplicationContext().getPackageName() + "/" + R.raw.s2);
+                    + mContext.getApplicationContext().getPackageName() + "/" + musicResource);
         }
         if(sticky) {
             n.flags |= Notification.FLAG_NO_CLEAR | Notification.FLAG_ONGOING_EVENT;

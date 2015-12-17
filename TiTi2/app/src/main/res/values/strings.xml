@@ -7,5 +7,16 @@
     <string name="title_activity_main">MainActivity</string>
     <string name="title_activity_learn_locations">LearnLocations</string>
     <string name="title_activity_maps">Geo Map</string>
+    <string name="title_activity_xpenser_categories">XpenserCategories</string>
+    <string name="title_activity_xpenser_sub_categories">XpenserSubCategories</string>
+    <string name="title_activity_xpenser_voucher_amount_entry">xpenserVoucherAmountEntry</string>
+    <string name="title_activity_xpenser_select_source_account">XpenserSelectSourceAccount</string>
+    <string name="title_activity_xpenser_voucher_submit_confirmation">XpenserVoucherSubmitConfirmation</string>
+    <string name="title_activity_xpenser_main">XpenserMain</string>
+    <string name="title_activity_xpenser_upload_to_cloud">XpenserUploadToCloud</string>
+    <string name="title_activity_xpenser_uploaded_to_cloud">XpenserUploadedToCloud</string>
+    <string name="dummy_button">Dummy Button</string>
+    <string name="dummy_content">DUMMY\nCONTENT</string>
+    <string name="title_activity_network_signal_strength_settings">NetworkSignalStrengthSettings</string>
 
 </resources>

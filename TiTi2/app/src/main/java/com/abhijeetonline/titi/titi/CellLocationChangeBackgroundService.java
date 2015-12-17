@@ -1,28 +1,24 @@
 package com.abhijeetonline.titi.titi;
 
-import android.app.Notification;
 import android.app.NotificationManager;
-import android.app.PendingIntent;
 import android.app.Service;
-import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.graphics.BitmapFactory;
-import android.os.Build;
+import android.content.SharedPreferences;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
 import android.os.Message;
 import android.telephony.CellLocation;
 import android.telephony.PhoneStateListener;
+import android.telephony.SignalStrength;
 import android.telephony.TelephonyManager;
 import android.telephony.gsm.GsmCellLocation;
 import android.util.Log;
-import android.widget.TextView;
 import android.widget.Toast;
 
-public class MainBackgroundService extends Service {
-    public MainBackgroundService() {
+public class CellLocationChangeBackgroundService extends Service {
+    public CellLocationChangeBackgroundService() {
     }
 
     private static final String TAG = "MainBackgroundService";
@@ -44,14 +40,13 @@ public class MainBackgroundService extends Service {
     @Override
     public void onCreate() {
 
-        Toast.makeText(this, "MyService Created", Toast.LENGTH_LONG).show();
-        Log.d(TAG, "onCreate");
+        //Toast.makeText(this, "TiTi Service Created", Toast.LENGTH_LONG).show();
+        //Log.d(TAG, "onCreate");
     }
 
     @Override
     public void onStart(Intent intent, int startId) {
-        Toast.makeText(this, "My Service Started", Toast.LENGTH_LONG).show();
-        Log.d(TAG, "onStart");
+       //Toast.makeText(this, "TiTi Service Started", Toast.LENGTH_LONG).show();
     }
 
     @Override
@@ -71,7 +66,7 @@ public class MainBackgroundService extends Service {
 
         mIsServiceRunning = true; // set service running status = true
 
-        Toast.makeText(this, "Congrats! My Service Started", Toast.LENGTH_LONG).show();
+        //Toast.makeText(this, "Congrats! TiTi Service Started", Toast.LENGTH_LONG).show();
         // We need to return if we want to handle this service explicitly.
 
         //notification("TiTi","TiTi@Work",2323,new Intent(getApplicationContext(),MainActivity.class));
@@ -81,8 +76,7 @@ public class MainBackgroundService extends Service {
 
     @Override
     public void onDestroy() {
-        Toast.makeText(this, "MyService Stopped", Toast.LENGTH_LONG).show();
-        Log.d(TAG, "onDestroy");
+        //Toast.makeText(this, "TiTi Service Stopped", Toast.LENGTH_LONG).show();
 
         mIsServiceRunning = false; // make it false, as the service is already destroyed.
 
@@ -113,17 +107,44 @@ public class MainBackgroundService extends Service {
                     //TextView txtCid = (TextView)findViewById(R.id.cellIdTextView);
                     String cellId = cellid+":"+lac;
                     String locationName = db.getLocation(cellId);
+                    GlobalValuesNStatus.getInstance().currentCellId=cellId;
+                    GlobalValuesNStatus.getInstance().currentCellLocation=locationName;
                     //final TiTiGlobal globalVariable = (TiTiGlobal)(getApplicationContext());
                     //globalVariable.setCurrentCellId(cellId);
                     NotificationHelper notificationHelper = new NotificationHelper(getApplicationContext());
                     if(locationName.isEmpty()) {
                         Intent intent2 = new Intent(getApplicationContext(),LearnLocations.class);
                         intent2.putExtra("cellId", cellId);
-                        notificationHelper.createNotification("TiTi@" + "Unknown Location", cellId, 2324,intent2,true,true);
+                        notificationHelper.createNotification("TiTi@" + "Unknown Location", cellId, 2324, intent2, true, true, "s2");
                     }else {
-                        notificationHelper.createNotification("TiTi@" + locationName, cellId, 2324,new Intent(getApplicationContext(),MainActivity.class),false,true);
+                        notificationHelper.createNotification("TiTi@" + locationName, cellId, 2324,new Intent(getApplicationContext(),MainActivity.class),false,true,"s2");
                     }
 
+                }
+            }
+            @Override
+            public void onSignalStrengthsChanged(SignalStrength signalStrength) {
+                super.onSignalStrengthsChanged(signalStrength);
+                if (signalStrength.isGsm()) {
+                    int asu = signalStrength.getGsmSignalStrength();
+                    int RSSIindBM = -113 + 2 * asu;
+                    NotificationHelper notificationHelper = new NotificationHelper(getApplicationContext());
+                    SharedPreferences settings = getSharedPreferences("TiTiPreferences", 0);
+                    int threshold = settings.getInt("NetworkSignalStrengthThreshold", -90);
+                    if(RSSIindBM < threshold){
+                        if(GlobalValuesNStatus.getInstance().muteSignalStrengthAlertForNTimes<=0) {
+                            notificationHelper.createNotification("TiTi", "Network Signal is getting poor... "+RSSIindBM+"db Calls may drop",
+                                    6767, new Intent(getApplicationContext(), NetworkSignalStrengthSettings.class), true, false, "serious");
+                            GlobalValuesNStatus.getInstance().muteSignalStrengthAlertForNTimes = 5;//mute for 5 occurrence
+                        }else {
+                            GlobalValuesNStatus.getInstance().muteSignalStrengthAlertForNTimes--;
+                        }
+                    }
+                    else{
+                        NotificationManager nMgr = (NotificationManager) getApplicationContext().getSystemService(getApplicationContext().NOTIFICATION_SERVICE);
+                        nMgr.cancel(6767); //Signals improved cancel notification
+                        GlobalValuesNStatus.getInstance().muteSignalStrengthAlertForNTimes=0;
+                    }
                 }
             }
 
@@ -137,7 +158,7 @@ public class MainBackgroundService extends Service {
             Looper.prepare();
 
             TelephonyManager TelephonyMgr = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
-            TelephonyMgr.listen(new TeleListener(), PhoneStateListener.LISTEN_CELL_LOCATION);
+            TelephonyMgr.listen(new TeleListener(), PhoneStateListener.LISTEN_CELL_LOCATION | PhoneStateListener.LISTEN_SIGNAL_STRENGTHS);
 
 
 
@@ -153,7 +174,7 @@ public class MainBackgroundService extends Service {
                         case 0: // we sent message with what value =0 from the activity. here it is
                             //Reply to the activity from here using same process handle.sendMessage()
                             //So first get the Activity handler then send the message
-                            if(null != MainActivity.mUiHandler)
+                            if(null != MainActivity2.mUiHandler)
                             {
                                 //first build the message and send.
                                 //put a integer value here and get it from the Activity handler
@@ -166,7 +187,7 @@ public class MainBackgroundService extends Service {
                                 else
                                     msgToActivity.obj  = "Request Received. Service is not Running"; // you can put extra message here
 
-                                MainActivity.mUiHandler.sendMessage(msgToActivity);
+                                MainActivity2.mUiHandler.sendMessage(msgToActivity);
                             }
 
                             break;

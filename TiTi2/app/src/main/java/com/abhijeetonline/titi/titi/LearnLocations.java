@@ -5,12 +5,9 @@ import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.speech.tts.TextToSpeech;
-import android.speech.tts.Voice;
-import android.text.Layout;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.Toast;
@@ -63,8 +60,8 @@ public class LearnLocations extends Activity implements View.OnClickListener {
         Toast toast;
         String toSpeak = "Started Learning New Location.";
         // t1.speak(toSpeak, TextToSpeech.QUEUE_FLUSH, null);
-        toast = Toast.makeText(this, "Started Learning New Location!!! "+cellId, Toast.LENGTH_LONG);
-        toast.show();
+       // toast = Toast.makeText(this, "Started Learning New Location!!! "+cellId, Toast.LENGTH_LONG);
+       // toast.show();
         db = new DatabaseHandler(getApplicationContext());
         String locationName="Unknown Location";
         NotificationHelper notificationHelper = new NotificationHelper(getApplicationContext());
@@ -81,13 +78,13 @@ public class LearnLocations extends Activity implements View.OnClickListener {
                 break;
         }
         db.addLocation(cellId,locationName);
-        notificationHelper.createNotification("TiTi@" + locationName, cellId, 2324,new Intent(getApplicationContext(),MainActivity.class),true,true);
+        notificationHelper.createNotification("TiTi@" + locationName, cellId, 2324,new Intent(getApplicationContext(),MainActivity2.class),true,true,"s2");
 
     }
 
 
 
-                @Override
+    @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.menu_learn_locations, menu);
